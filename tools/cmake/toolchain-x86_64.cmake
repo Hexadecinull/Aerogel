@@ -1,0 +1,17 @@
+set(CMAKE_SYSTEM_NAME       Generic)
+set(CMAKE_SYSTEM_PROCESSOR  x86_64)
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+
+find_program(CMAKE_C_COMPILER        x86_64-elf-gcc     REQUIRED)
+find_program(CMAKE_CXX_COMPILER      x86_64-elf-g++     REQUIRED)
+find_program(CMAKE_ASM_NASM_COMPILER nasm               REQUIRED)
+find_program(CMAKE_LINKER            x86_64-elf-ld      REQUIRED)
+find_program(CMAKE_AR                x86_64-elf-ar      REQUIRED)
+find_program(CMAKE_OBJCOPY           x86_64-elf-objcopy REQUIRED)
+
+set(CMAKE_C_COMPILER_TARGET   x86_64-elf)
+set(CMAKE_CXX_COMPILER_TARGET x86_64-elf)
+
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)

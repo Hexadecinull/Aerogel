@@ -1,0 +1,40 @@
+name: Bug Report
+description: Report a bug in Aerogel
+labels: [bug]
+body:
+  - type: input
+    id: component
+    attributes:
+      label: Component
+      description: "e.g. bootloader/x86, kernel/pmm, drivers/ps2"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened and what did you expect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+
+  - type: input
+    id: arch
+    attributes:
+      label: Architecture
+      placeholder: "x86 or x86_64"
+    validations:
+      required: true
+
+  - type: textarea
+    id: serial
+    attributes:
+      label: Serial output / panic message
+      render: text

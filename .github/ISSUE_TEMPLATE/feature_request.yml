@@ -1,0 +1,24 @@
+name: Feature Request
+description: Propose a new feature
+labels: [enhancement]
+body:
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this feature needed?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed implementation
+    validations:
+      required: true
+
+  - type: input
+    id: arch
+    attributes:
+      label: Affected architecture(s)
+      placeholder: "x86, x86_64, or both"

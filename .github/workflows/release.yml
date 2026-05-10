@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y nasm gcc gcc-multilib g++-multilib cmake \
+            qemu-system-x86 ovmf xorriso python3
+
+      - name: Build x86
+        run: |
+          make -C arch/x86/boot all
+          cmake -B build/x86 -DAERGEL_ARCH=x86 -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY
+          cmake --build build/x86 -- -j$(nproc)
+          python3 tools/scripts/create-disk.py --arch x86 --output build/aerogel-x86.img
+
+      - name: Build x86_64
+        run: |
+          make -C arch/x86_64/boot all
+          cmake -B build/x86_64 -DAERGEL_ARCH=x86_64 -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY
+          cmake --build build/x86_64 -- -j$(nproc)
+          python3 tools/scripts/create-disk.py --arch x86_64 --output build/aerogel-x86_64.img
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/aerogel-x86.img
+            build/aerogel-x86_64.img
+          generate_release_notes: true

@@ -12,25 +12,59 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y nasm gcc gcc-multilib g++-multilib cmake \
-            qemu-system-x86 ovmf xorriso python3
+          sudo apt-get install -y nasm gcc gcc-multilib g++-multilib \
+            gcc-mingw-w64-x86-64 cmake qemu-system-x86 ovmf \
+            xorriso python3 dosfstools mtools
+
+      - name: Install Rust nightly + rust-src
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+            sh -s -- -y --default-toolchain nightly --profile minimal
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          rustup component add rust-src --toolchain nightly
+
+      - name: Build Rust (x86)
+        run: |
+          cd rust
+          cargo +nightly build --release \
+            --target ../rust/targets/aerogel-x86.json
+        continue-on-error: true
 
       - name: Build x86
         run: |
           make -C arch/x86/boot all
-          cmake -B build/x86 -DAEROGEL_ARCH=x86 -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY
+          cmake -B build/x86 -DAEROGEL_ARCH=x86 \
+            -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+            -DCMAKE_C_FLAGS="-m32"
           cmake --build build/x86 -- -j$(nproc)
-          python3 tools/scripts/create-disk.py --arch x86 --output build/aerogel-x86.img
+          python3 tools/scripts/create-disk.py \
+            --arch x86 \
+            --mbr arch/x86/boot/mbr.bin \
+            --stage2 arch/x86/boot/stage2.bin \
+            --kernel build/x86/kernel.bin \
+            --output build/aerogel-x86.img
+
+      - name: Build Rust (x86_64)
+        run: |
+          cd rust
+          cargo +nightly build --release \
+            --target ../rust/targets/aerogel-x86_64.json
+        continue-on-error: true
 
       - name: Build x86_64
         run: |
           make -C arch/x86_64/boot all
-          cmake -B build/x86_64 -DAEROGEL_ARCH=x86_64 -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY
+          cmake -B build/x86_64 -DAEROGEL_ARCH=x86_64 \
+            -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY
           cmake --build build/x86_64 -- -j$(nproc)
-          python3 tools/scripts/create-disk.py --arch x86_64 --output build/aerogel-x86_64.img
+          python3 tools/scripts/create-disk.py \
+            --arch x86_64 \
+            --efi  arch/x86_64/boot/bootx64.efi \
+            --kernel build/x86_64/kernel.bin \
+            --output build/aerogel-x86_64.img
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

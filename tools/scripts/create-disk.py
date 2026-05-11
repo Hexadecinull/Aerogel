@@ -103,7 +103,7 @@ def make_gpt_image(efi_bin, kernel_bin, out):
         img = os.path.join(td, "esp.img")
         esp_bytes = ESP_SECTS * SECTOR
         with open(img, "wb") as f:
-            f.write(b"\x00" * (data_sects * SECTOR))
+            f.write(b"\x00" * esp_bytes)
         subprocess.run(["mkfs.fat", "-F", "32", "-n", "AEROGEL_EFI", img],
                        check=True, capture_output=True)
         subprocess.run(["mmd", "-i", img, "::EFI"],       check=True, capture_output=True)

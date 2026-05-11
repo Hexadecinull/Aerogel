@@ -13,11 +13,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y nasm gcc gcc-mingw-w64-x86-64 cmake \
             qemu-system-x86 ovmf xorriso python3 dosfstools mtools
+
+      - name: Install Rust nightly + rust-src
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+            sh -s -- -y --default-toolchain nightly --profile minimal
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          rustup component add rust-src --toolchain nightly
+
+      - name: Build Rust network core (x86_64)
+        run: |
+          cd rust
+          cargo +nightly build --release \
+            --target ../rust/targets/aerogel-x86_64.json
+        continue-on-error: true
 
       - name: Build UEFI bootloader
         run: make -C arch/x86_64/boot all
@@ -28,7 +42,6 @@ jobs:
             -DAEROGEL_ARCH=x86_64 \
             -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
             -DCMAKE_C_COMPILER=gcc \
-            -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_ASM_NASM_COMPILER=nasm
 
       - name: Build kernel
@@ -39,18 +52,19 @@ jobs:
           python3 tools/scripts/create-disk.py \
             --arch x86_64 \
             --efi    arch/x86_64/boot/bootx64.efi \
-            --kernel build/x86_64/kernel/kernel.bin \
+            --kernel build/x86_64/kernel.bin \
             --output build/aerogel-x86_64.img
 
       - name: Smoke test (headless UEFI boot)
         run: |
           OVMF=/usr/share/OVMF/OVMF_CODE.fd
           [ -f $OVMF ] || OVMF=/usr/share/ovmf/OVMF.fd
-          timeout 10 qemu-system-x86_64 \
+          timeout 8 qemu-system-x86_64 \
             -M q35 -m 512M \
             -drive file=build/aerogel-x86_64.img,format=raw,if=ide \
             -drive if=pflash,format=raw,readonly=on,file=$OVMF \
-            -display none -serial stdio -no-reboot 2>&1 | head -40 || true
+            -display none -serial stdio -no-reboot \
+            2>&1 | head -40 || true
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

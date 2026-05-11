@@ -13,27 +13,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y nasm gcc-multilib g++-multilib cmake \
             qemu-system-x86 ovmf xorriso python3 dosfstools mtools
 
-      - name: Install Rust toolchain
+      - name: Install Rust nightly + rust-src
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
-            sh -s -- -y --default-toolchain nightly
-          source ~/.cargo/env
-          rustup target add i686-unknown-linux-gnu
+            sh -s -- -y --default-toolchain nightly --profile minimal
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          rustup component add rust-src --toolchain nightly
 
-      - name: Build Rust network core
+      - name: Build Rust network core (x86)
         run: |
-          source ~/.cargo/env
           cd rust
-          cargo build --release --target ../rust/targets/aerogel-x86.json \
-            -Z build-std=core \
-            -Z build-std-features=compiler-builtins-mem 2>/dev/null || \
-          cargo build --release --target i686-unknown-linux-gnu
+          cargo +nightly build --release \
+            --target ../rust/targets/aerogel-x86.json
         continue-on-error: true
 
       - name: Build bootloader
@@ -45,7 +42,6 @@ jobs:
             -DAEROGEL_ARCH=x86 \
             -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
             -DCMAKE_C_COMPILER=gcc \
-            -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_ASM_NASM_COMPILER=nasm \
             -DCMAKE_C_FLAGS="-m32"
 
@@ -58,14 +54,15 @@ jobs:
             --arch x86 \
             --mbr    arch/x86/boot/mbr.bin \
             --stage2 arch/x86/boot/stage2.bin \
-            --kernel build/x86/kernel/kernel.bin \
+            --kernel build/x86/kernel.bin \
             --output build/aerogel-x86.img
 
-      - name: Smoke test
+      - name: Smoke test (headless QEMU boot)
         run: |
           timeout 8 qemu-system-i386 \
             -drive file=build/aerogel-x86.img,format=raw,if=ide \
-            -m 256M -display none -serial stdio -no-reboot 2>&1 | head -40 || true
+            -m 256M -display none -serial stdio -no-reboot \
+            2>&1 | head -40 || true
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

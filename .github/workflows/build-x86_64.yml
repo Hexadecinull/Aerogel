@@ -25,7 +25,7 @@ jobs:
       - name: Configure kernel
         run: |
           cmake -B build/x86_64 \
-            -DAERGEL_ARCH=x86_64 \
+            -DAEROGEL_ARCH=x86_64 \
             -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
             -DCMAKE_C_COMPILER=gcc \
             -DCMAKE_CXX_COMPILER=g++ \

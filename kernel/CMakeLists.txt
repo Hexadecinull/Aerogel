@@ -50,6 +50,7 @@ set_target_properties(kernel.elf PROPERTIES
 target_link_options(kernel.elf PRIVATE
     -T ${AEROGEL_LINKER_SCRIPT}
     -nostdlib
+    -no-pie
     -Wl,-z,max-page-size=0x1000
     -Wl,--build-id=none
 )

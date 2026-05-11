@@ -1,3 +1,4 @@
+#include <types.h>
 #include "framebuffer.h"
 #include <string.h>
 
@@ -157,13 +158,13 @@ u16  fb_height(void) { return fb.height; }
 
 static void put_pixel_32(int x, int y, u32 c) {
     if ((u16)x >= fb.width || (u16)y >= fb.height) return;
-    u32 *p = (u32 *)(fb.addr + (u32)y * fb.pitch + (u32)x * 4);
+    u32 *p = (u32 *)(uptr)(fb.addr + (u32)y * fb.pitch + (u32)x * 4);
     *p = c;
 }
 
 static void put_pixel_24(int x, int y, u32 c) {
     if ((u16)x >= fb.width || (u16)y >= fb.height) return;
-    u8 *p = (u8 *)(fb.addr + (u32)y * fb.pitch + (u32)x * 3);
+    u8 *p = (u8 *)(uptr)(fb.addr + (u32)y * fb.pitch + (u32)x * 3);
     p[0] = (u8)(c & 0xFF);
     p[1] = (u8)((c >> 8)  & 0xFF);
     p[2] = (u8)((c >> 16) & 0xFF);
@@ -184,7 +185,7 @@ void fb_vline(int x, int y, int len, u32 c) {
 
 void fb_clear(u32 c) {
     if (fb.bpp == 32 && fb.pitch == (u32)fb.width * 4) {
-        u32 *p = (u32 *)fb.addr;
+        u32 *p = (u32 *)(uptr)fb.addr;
         u32  n = (u32)fb.width * fb.height;
         for (u32 i = 0; i < n; i++) p[i] = c;
     } else {

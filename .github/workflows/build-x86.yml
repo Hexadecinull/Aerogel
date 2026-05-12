@@ -30,6 +30,7 @@ jobs:
         run: |
           cd rust
           cargo +nightly build --release \
+            -Zjson-target-spec \
             --target ../rust/targets/aerogel-x86.json
         continue-on-error: true
 
